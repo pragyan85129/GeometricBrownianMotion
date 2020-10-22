@@ -1,0 +1,96 @@
+from pandas_datareader import data as pdr
+import pandas as pd
+import numpy as np
+import datetime
+import yfinance as yf
+import matplotlib.pyplot as plt
+import seaborn as sns
+import scipy as sc
+from scipy.stats import norm
+
+def Brownian(seed, N):
+    
+    np.random.seed(seed)                         
+    dt = 1./N  
+    print("dt") 
+    print(dt)                                 # time step
+    b = np.random.normal(0., 1., int(N))*np.sqrt(dt)  # brownian increments
+    print(b)
+    W = np.cumsum(b)  
+    print("w")
+    print(W)                           # brownian path
+    return W, b
+
+def GBM(So, mu, sigma, W, T, N):    
+    t = np.linspace(0.0,1.0,N+1)
+    print(t)
+    S = []
+    date2=[]
+    S.append(So)
+    print(date2)
+    date2.append(data.index)
+    print(date2)
+    for i in range(1,int(N+1)):
+      drift = (mu - 0.5 * sigma**2.0) * t[i]
+      diffusion = sigma * W[i-1]
+      S_temp = So*np.exp(drift + diffusion)
+      S.append(S_temp)
+      print("w1")
+      print(i)
+      print(W[i-1])
+    return S, t
+
+
+plt.style.use('seaborn-whitegrid')
+print ("hello")
+yf.pdr_override()
+start_date=datetime.datetime.strptime('18/09/28','%y/%m/%d')
+end_date=datetime.datetime.strptime('19/09/26', '%y/%m/%d')
+data = pdr.get_data_yahoo('ACA.PA', start=start_date, end=end_date)
+
+data['Return']= (data['Open']-data['Open'].shift(+1))/data['Open']
+print((data.head()))
+#sns.set_style('darkgrid')
+#sns.distplot(data['Return'])
+sd=data['Return'].std()*np.sqrt(252.0) # diffusion cofficient
+mean =data['Return'].mean()*252.0 ## drift cofficient
+print(sd)
+print(mean)
+seed = 22
+So =data['Open'][0]
+T = 1.
+N = 252
+W = Brownian(seed, N)[0]
+soln = GBM(So, mean, sd, W, T, N)[0]   
+t = GBM(So, mean, sd, W, T, N)[1]       # time increments for  plotting
+
+plt.plot(data.index, data['Open'], label = 'Actual') # plot the Open Stock proce
+
+seed = 5
+W = Brownian(seed, N)[0]
+print(W)
+soln2 = GBM(So, mean ,sd, W, T, N)[0]    
+
+seed = 15
+W = Brownian(seed, N)[0]
+soln3 = GBM(So, mean, sd, W, T, N)[0]    
+
+#plt.plot(data.index, soln,label = 'soln')
+plt.ylabel('APPL Stock Price, $')
+plt.title('Geometric Brownian Motion - APPL')
+
+
+
+time = np.linspace(1, len(data['Open']), len(data['Open']))
+time = [i/252. for i in time]
+#plt.plot(data.index,data['Open'], label = 'Actual')
+
+plt.plot(data.index, soln, label = 'GBM (seed = 3)', ls='--')
+plt.plot(data.index, soln2, label = 'GBM (seed = 22)', ls='--')
+plt.plot(data.index, soln3, label = 'GBM (seed = 22)', ls='--')
+
+plt.ylabel('AMZN Stock Price, $')
+plt.title('Geometric Brownian Motion - AMZN')
+
+plt.legend(loc = 'upper left')
+plt.show()
